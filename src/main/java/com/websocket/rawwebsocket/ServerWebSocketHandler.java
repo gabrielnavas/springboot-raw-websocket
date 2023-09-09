@@ -5,7 +5,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
-import org.springframework.web.util.HtmlUtils;
 
 import java.io.IOException;
 import java.time.LocalTime;
@@ -15,6 +14,10 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Logger;
 
+
+/**
+ * This class is on <a href="https://github.com/eugenp/tutorials/blob/master/spring-websockets/src/main/java/com/baeldung/rawwebsocket/ServerWebSocketHandler.java">tutorial</a>
+ */
 @Component
 @EnableScheduling
 public class ServerWebSocketHandler extends TextWebSocketHandler implements SubProtocolCapable {
@@ -31,15 +34,17 @@ public class ServerWebSocketHandler extends TextWebSocketHandler implements SubP
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        logger.info(String.format("server connection closed %s", session.getId()));
+        logger.info(String.format("server connection closed %s with status %d", session.getId(), status.getCode()));
         sessions.remove(session);
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        String request = message.getPayload();
-        String response = String.format("response from server to '%s'", HtmlUtils.htmlEscape(request));
-        session.sendMessage(new TextMessage(response));
+        Greeting greeting = new Greeting();
+        greeting.readValueFromJson(message.getPayload());
+
+        String jsonResponse = greeting.toJsonString();
+        session.sendMessage(new TextMessage(jsonResponse));
     }
 
     @Scheduled(fixedRate = 5000)
